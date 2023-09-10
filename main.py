@@ -4,15 +4,15 @@ import matplotlib.animation as animation
 
 fig = plt.figure()
 ax = fig.add_subplot()
-ax.set_xlim([-5,5])
-ax.set_ylim([-5,5])
+ax.set_xlim([-6,6])
+ax.set_ylim([-6,6])
 
 class monster():
     def __init__(self, index) -> None:
         self.monsterIdentity = index
         self.speed = 0.01
         self.hitRadius = 1
-        self.searchRadius = 2
+        self.searchRadius = 1
         self.directionHeading = 0
 
         
@@ -22,8 +22,12 @@ class monster():
         distance = np.sqrt(xDiff ** 2 + yDiff ** 2)
         newXposition = globalPositions[self.monsterIdentity][0] + self.speed * xDiff/distance
         newYposition = globalPositions[self.monsterIdentity][1] + self.speed * yDiff/distance
-        if distance > self.hitRadius and -5 < newXposition < 5 and -5 < newYposition < 5:
+        if -5 < newXposition < 5 and -5 < newYposition < 5:
             globalPositions[self.monsterIdentity] = np.array([newXposition, newYposition])
+        else:
+            #print(self.directionHeading)
+            self.directionHeading += np.pi
+            #print(self.directionHeading)
 
 
     def distanceCalculation(self, x, y):
@@ -31,7 +35,8 @@ class monster():
     
     def calculatePoint(self, populationDirection, avgHeading, influenceFactor):
         goDirection = (populationDirection + avgHeading) * influenceFactor + self.directionHeading
-        return [np.cos(goDirection), np.sin(goDirection)]
+        self.directionHeading = goDirection
+        return [np.cos(goDirection), np.sin(goDirection)] 
         
         
 
@@ -61,15 +66,16 @@ class monster():
             avgYDis = totalYDiff / searchCount
             avgHeading /= searchCount
 
+        influenceFactor = 0.001
         if self.distanceCalculation(avgXDis, avgYDis) < self.hitRadius:
             populationDirection = np.arctan(avgYDis/avgXDis) + np.pi
             self.goToPoint(self.calculatePoint
-                           (populationDirection, avgHeading, 0.2), globalPositions)
+                           (populationDirection, avgHeading, influenceFactor), globalPositions)
 
         else:
             populationDirection = np.arctan(avgYDis/avgXDis)
             self.goToPoint(self.calculatePoint
-                           (populationDirection, avgHeading, 0.2), globalPositions)
+                           (populationDirection, avgHeading, influenceFactor), globalPositions)
 
     def update(self, globalPositions:np.ndarray, allObjects:list):
         self.searchArea(globalPositions, allObjects)
@@ -105,9 +111,10 @@ def animateFunction(i):
     #print(i)
     for o in allObjects:
         o.update(globalPositions, allObjects)
-        print(globalPositions)
+        for m in allObjects:
+            print(m.directionHeading)
 
     return plotObjects(allObjects)
 
-ani = animation.FuncAnimation(fig, animateFunction, frames=100, interval= 10, blit=True)
+ani = animation.FuncAnimation(fig, animateFunction, frames=1000, interval= 10, blit=True)
 plt.show()
