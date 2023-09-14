@@ -4,95 +4,131 @@ import matplotlib.animation as animation
 
 fig = plt.figure()
 ax = fig.add_subplot()
-ax.set_xlim([-6,6])
-ax.set_ylim([-6,6])
+windowSize = 5
+ax.set_xlim([-windowSize,windowSize])
+ax.set_ylim([-windowSize,windowSize])
 
 class monster():
     def __init__(self, index) -> None:
-        self.monsterIdentity = index
-        self.speed = 0.01
-        self.hitRadius = 1
-        self.searchRadius = 1
-        self.directionHeading = 0
-
-        
-    def goToPoint(self, point:list, globalPositions:np.ndarray):
-        xDiff = point[0] - globalPositions[self.monsterIdentity][0]
-        yDiff = point[1] - globalPositions[self.monsterIdentity][1]
-        distance = np.sqrt(xDiff ** 2 + yDiff ** 2)
-        newXposition = globalPositions[self.monsterIdentity][0] + self.speed * xDiff/distance
-        newYposition = globalPositions[self.monsterIdentity][1] + self.speed * yDiff/distance
-        if -5 < newXposition < 5 and -5 < newYposition < 5:
-            globalPositions[self.monsterIdentity] = np.array([newXposition, newYposition])
-        else:
-            #print(self.directionHeading)
-            self.directionHeading += np.pi
-            #print(self.directionHeading)
+        self.monsterIndex = index
+        self.speed = 0.02
+        self.hitRadius = 0.1
+        self.searchRadius = 0.75
+        self.directionHeading = np.random.random() * 2 * np.pi
 
 
-    def distanceCalculation(self, x, y):
-        return np.sqrt(x ** 2 + y ** 2)
+
+    def findDistance(self, globalPositions, monster1Index, monster2Index):
+        xdif = globalPositions[monster1Index][0] - globalPositions[monster2Index][0]
+        ydif = globalPositions[monster1Index][1] - globalPositions[monster2Index][1]
+        return np.sqrt(xdif**2 + ydif**2)
+
+    def findNeighbors(self, globalPositions, allObjects):
+        neighboring = []
+        for index in range(len(globalPositions)):
+            if self.findDistance(globalPositions, index, self.monsterIndex) < self.searchRadius:
+                neighboring.append(allObjects[index].monsterIndex)
+        return neighboring
     
-    def calculatePoint(self, populationDirection, avgHeading, influenceFactor):
-        goDirection = (populationDirection + avgHeading) * influenceFactor + self.directionHeading
-        self.directionHeading = goDirection
-        return [np.cos(goDirection), np.sin(goDirection)] 
-        
-        
-
-
-    def searchArea(self, globalPositions:np.ndarray, allObjects:list):
-        totalXDiff = 0
-        totalYDiff = 0
-        searchCount = 0
-        avgXDis = 0
-        avgYDis = 0
-        avgHeading = 0
-
-
-        for i in range(len(globalPositions)):
-            xDiff = globalPositions[i][0] - globalPositions[self.monsterIdentity][0]
-            yDiff = globalPositions[i][1] - globalPositions[self.monsterIdentity][1]
-
-            distance = self.distanceCalculation(xDiff, yDiff)
-            if distance < self.searchRadius:
-                totalXDiff += xDiff
-                totalYDiff += yDiff
-                searchCount += 1
-                avgHeading += allObjects[i].directionHeading
-        
-        if searchCount != 0:
-            avgXDis = totalXDiff / searchCount
-            avgYDis = totalYDiff / searchCount
-            avgHeading /= searchCount
-
-        influenceFactor = 0.001
-        if self.distanceCalculation(avgXDis, avgYDis) < self.hitRadius:
-            populationDirection = np.arctan(avgYDis/avgXDis) + np.pi
-            self.goToPoint(self.calculatePoint
-                           (populationDirection, avgHeading, influenceFactor), globalPositions)
-
-        else:
-            populationDirection = np.arctan(avgYDis/avgXDis)
-            self.goToPoint(self.calculatePoint
-                           (populationDirection, avgHeading, influenceFactor), globalPositions)
-
-    def update(self, globalPositions:np.ndarray, allObjects:list):
-        self.searchArea(globalPositions, allObjects)
-
-        #self.goToPoint(point, globalPositions)
-
-class food():
-    def __init__(self) -> None:
-        self.spawnPoint = [0, 0]
-        self.speed = 0.10
-        self.position = self.spawnPoint
-        self.hitBoxRadius = 1
+    def distanceTOangle(self, xDiff, yDiff, opposite):
+        "If Opposite is 1, then go in the opposite direction. 0 goes in same direction"
+        if opposite == 1:
+            if (xDiff > 0 and yDiff > 0):
+                self.directionHeading = np.pi + np.arctan(yDiff/xDiff)
+            elif xDiff > 0:
+                self.directionHeading = np.pi + np.arctan(yDiff/xDiff)
+            elif yDiff > 0:
+                self.directionHeading = np.arctan(yDiff/xDiff)
+            else:
+                self.directionHeading = np.arctan(yDiff/xDiff)
+        elif opposite == 0:
+            if (xDiff > 0 and yDiff > 0):
+                self.directionHeading = np.arctan(yDiff/xDiff)
+            elif xDiff > 0:
+                self.directionHeading = np.arctan(yDiff/xDiff)
+            elif yDiff > 0:
+                self.directionHeading = np.pi + np.arctan(yDiff/xDiff)
+            else:
+                self.directionHeading = np.pi + np.arctan(yDiff/xDiff)
     
-    def update():
-        None
+    def moveInHeading(self, globalPositions):
+        
+        if -5 < globalPositions[self.monsterIndex][0] < 5 and \
+           -5 < globalPositions[self.monsterIndex][1] < 5:
+            print(f"Before Direction: {self.directionHeading * 180 / np.pi}")
+            xChange = np.cos(self.directionHeading)
+            yChange = np.sin(self.directionHeading)
+            globalPositions[self.monsterIndex][0] += self.speed * xChange
+            globalPositions[self.monsterIndex][1] += self.speed * yChange
+            print(f"Still Good, {self.directionHeading * 180 / np.pi}")
+        else:
+            print(f"Before Direction: {self.directionHeading * 180 / np.pi}")
+            xDiff = globalPositions[self.monsterIndex][0]
+            yDiff = globalPositions[self.monsterIndex][1]
+            
+            self.distanceTOangle(xDiff, yDiff, 1)
 
-monsterCount = 10
+            print(f"After Change: {self.directionHeading * 180 / np.pi}, Ydiff {yDiff}, Xdiff {xDiff}")
+            xChange = np.cos(self.directionHeading)
+            yChange = np.sin(self.directionHeading)
+            globalPositions[self.monsterIndex][0] += self.speed * xChange
+            globalPositions[self.monsterIndex][1] += self.speed * yChange
+            print(f"After Change, {self.directionHeading * 180 / np.pi}")
+
+    def findcenter(self, neighbors, globalPositions):
+        xPositionAvg = 0
+        yPositionAvg = 0
+        for i in neighbors:
+            xPositionAvg += globalPositions[i][0]
+            yPositionAvg += globalPositions[i][1]
+        xPositionAvg /= len(neighbors)
+        yPositionAvg /= len(neighbors)
+
+        return [xPositionAvg, yPositionAvg]
+    
+    def SeparationAndCohesion(self, center, globalPositions, importanceFactor):
+        "Importance factor decides how much weight to assign to the neighbor center"
+        xPosition = globalPositions[self.monsterIndex][0]
+        yPosition = globalPositions[self.monsterIndex][1]
+        xdif = center[0] - xPosition
+        ydif = center[1] - yPosition
+        distance = np.sqrt(xdif**2 + ydif**2)
+
+        if distance <= self.hitRadius:
+            currentX = np.cos(self.directionHeading) - xdif * importanceFactor
+            currentY = np.sin(self.directionHeading) - ydif * importanceFactor
+            self.distanceTOangle(currentX, currentY, 0)
+        else:
+            currentX = np.cos(self.directionHeading) + xdif * importanceFactor
+            currentY = np.sin(self.directionHeading) + ydif * importanceFactor
+            self.distanceTOangle(currentX, currentY, 0)
+
+
+    def findHeadings(self, neighbors, allObjects):
+        averageHeading = 0
+        for i in neighbors:
+            averageHeading += allObjects[i].directionHeading
+        averageHeading /= len(neighbors)
+        return averageHeading
+
+    def update(self, globalPositions, allObjects):
+        neighboring = self.findNeighbors(globalPositions, allObjects)
+        center = self.findcenter(neighboring, globalPositions)
+
+        importanceFactor = 0.30
+        self.SeparationAndCohesion(center, globalPositions, importanceFactor)
+
+        headingFactor = 0.001
+        averageTheta = self.findHeadings(neighboring, allObjects)
+        currentX = np.cos(self.directionHeading) + np.cos(averageTheta) * headingFactor
+        currentY = np.sin(self.directionHeading) + np.sin(averageTheta) * headingFactor
+        self.distanceTOangle(currentX, currentY, 0)
+
+        self.moveInHeading(globalPositions)
+
+
+
+monsterCount = 20
 allObjects = []
 globalPositions = np.random.rand(monsterCount, 2) * 10 - 5
 for i in range(monsterCount):
@@ -102,8 +138,8 @@ for i in range(monsterCount):
 def plotObjects(allObjects:list):
     allArtists = []
     for objectItem in allObjects:
-        lineArtist, = ax.plot(globalPositions[objectItem.monsterIdentity][0], 
-                              globalPositions[objectItem.monsterIdentity][1], '.b')
+        lineArtist, = ax.plot(globalPositions[objectItem.monsterIndex][0], 
+                              globalPositions[objectItem.monsterIndex][1], '.b')
         allArtists.append(lineArtist)
     return allArtists
 
@@ -111,8 +147,9 @@ def animateFunction(i):
     #print(i)
     for o in allObjects:
         o.update(globalPositions, allObjects)
-        for m in allObjects:
-            print(m.directionHeading)
+        print("----------")
+        #for m in allObjects:
+        #    print(m.directionHeading / np.pi * 180)
 
     return plotObjects(allObjects)
 
