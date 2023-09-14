@@ -9,13 +9,14 @@ ax.set_xlim([-windowSize,windowSize])
 ax.set_ylim([-windowSize,windowSize])
 
 class monster():
-    def __init__(self, index) -> None:
+    def __init__(self, index, speed, hitRadius, searchRadius, separationFactor, headingFactor) -> None:
         self.monsterIndex = index
-        self.speed = 0.02
-        self.hitRadius = 0.1
-        self.searchRadius = 0.75
+        self.speed = speed
+        self.hitRadius = hitRadius
+        self.searchRadius = searchRadius
         self.directionHeading = np.random.random() * 2 * np.pi
-
+        self.separationFactor = separationFactor
+        self.headingFactor = headingFactor
 
 
     def findDistance(self, globalPositions, monster1Index, monster2Index):
@@ -115,24 +116,27 @@ class monster():
         neighboring = self.findNeighbors(globalPositions, allObjects)
         center = self.findcenter(neighboring, globalPositions)
 
-        importanceFactor = 0.30
-        self.SeparationAndCohesion(center, globalPositions, importanceFactor)
+        self.SeparationAndCohesion(center, globalPositions, self.separationFactor)
 
-        headingFactor = 0.001
         averageTheta = self.findHeadings(neighboring, allObjects)
-        currentX = np.cos(self.directionHeading) + np.cos(averageTheta) * headingFactor
-        currentY = np.sin(self.directionHeading) + np.sin(averageTheta) * headingFactor
+        currentX = np.cos(self.directionHeading) + np.cos(averageTheta) * self.headingFactor
+        currentY = np.sin(self.directionHeading) + np.sin(averageTheta) * self.headingFactor
         self.distanceTOangle(currentX, currentY, 0)
 
         self.moveInHeading(globalPositions)
 
 
-
 monsterCount = 20
+speed = 0.02
+hitRadius = 0.2
+searchRadius = 0.75
+separationCohesionFactor = 0.5
+headingFactor = 0.01
+
 allObjects = []
 globalPositions = np.random.rand(monsterCount, 2) * 10 - 5
 for i in range(monsterCount):
-    monster1 = monster(i)
+    monster1 = monster(i, speed, hitRadius, searchRadius, separationCohesionFactor, headingFactor)
     allObjects.append(monster1)
 
 def plotObjects(allObjects:list):
