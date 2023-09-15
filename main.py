@@ -56,25 +56,19 @@ class monster():
         
         if -5 < globalPositions[self.monsterIndex][0] < 5 and \
            -5 < globalPositions[self.monsterIndex][1] < 5:
-            print(f"Before Direction: {self.directionHeading * 180 / np.pi}")
             xChange = np.cos(self.directionHeading)
             yChange = np.sin(self.directionHeading)
             globalPositions[self.monsterIndex][0] += self.speed * xChange
             globalPositions[self.monsterIndex][1] += self.speed * yChange
-            print(f"Still Good, {self.directionHeading * 180 / np.pi}")
         else:
-            print(f"Before Direction: {self.directionHeading * 180 / np.pi}")
             xDiff = globalPositions[self.monsterIndex][0]
             yDiff = globalPositions[self.monsterIndex][1]
             
             self.distanceTOangle(xDiff, yDiff, 1)
-
-            print(f"After Change: {self.directionHeading * 180 / np.pi}, Ydiff {yDiff}, Xdiff {xDiff}")
             xChange = np.cos(self.directionHeading)
             yChange = np.sin(self.directionHeading)
             globalPositions[self.monsterIndex][0] += self.speed * xChange
             globalPositions[self.monsterIndex][1] += self.speed * yChange
-            print(f"After Change, {self.directionHeading * 180 / np.pi}")
 
     def findcenter(self, neighbors, globalPositions):
         xPositionAvg = 0
@@ -125,12 +119,12 @@ class monster():
 
         self.moveInHeading(globalPositions)
 
-
+#---[Settings]---
 monsterCount = 20
 speed = 0.02
-hitRadius = 0.2
+hitRadius = 0.27
 searchRadius = 0.75
-separationCohesionFactor = 0.5
+separationCohesionFactor = 0.1
 headingFactor = 0.01
 
 allObjects = []
@@ -148,12 +142,8 @@ def plotObjects(allObjects:list):
     return allArtists
 
 def animateFunction(i):
-    #print(i)
     for o in allObjects:
         o.update(globalPositions, allObjects)
-        print("----------")
-        #for m in allObjects:
-        #    print(m.directionHeading / np.pi * 180)
 
     return plotObjects(allObjects)
 
